@@ -118,7 +118,7 @@ static void nine()
         gpio_write(seg7.g.port, seg7.g.pin, HIGH);
 }
 
-static void seg7_display(uint8_t num)
+void seg7_display(uint8_t num)
 {
     seg7_clear();
 
