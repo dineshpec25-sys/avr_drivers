@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "gpio.h"
 
-#define ULTRA_PORT      GPIO_PORT_J
+#define ULTRA_PORT      'J'
 #define ULTRA_TRIG_PIN  0
 #define ULTRA_ECHO_PIN  1
 
