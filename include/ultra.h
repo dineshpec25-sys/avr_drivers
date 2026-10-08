@@ -2,6 +2,7 @@
 #define ULTRA_H
 
 #include <stdint.h>
+#include "gpio.h"
 
 #define ULTRA_PORT      GPIO_PORT_J
 #define ULTRA_TRIG_PIN  0
