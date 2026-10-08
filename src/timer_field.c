@@ -28,15 +28,13 @@ void timer_init(void)
      *
      * OCR0A = 249
      *
-     * 250 × 4 us = 1 ms
+     * 250 x 4 us = 1 ms
      * ===================================================== */
 
     HM_TCCR0A = 0x02;
-
     HM_TCCR0B = 0x03;
 
     HM_TCNT0 = 0;
-
     HM_OCR0A = 249;
 
     /* Clear Timer0 compare-match flag */
@@ -49,14 +47,11 @@ void timer_init(void)
      * Normal mode
      * Initially stopped
      *
-     * Prescaler = 8
-     *
      * 16 MHz / 8 = 2 MHz
      * 1 count = 0.5 us
      * ===================================================== */
 
     HM_TCCR1A = 0x00;
-
     HM_TCCR1B = 0x00;
 
     HM_TCNT1 = 0;
@@ -106,9 +101,9 @@ void ms_delay(uint16_t ms)
  *
  * Timer1:
  *
- * 0 → 1 → ... → 65535 → 0
- *                         ↑
- *                    overflow
+ * 0 -> 1 -> ... -> 65535 -> 0
+ *                           ^
+ *                      overflow
  *
  * Every overflow represents 65536 timer counts.
  */
@@ -123,16 +118,24 @@ ISR(TIMER1_OVF_vect)
  */
 void timer_measure_reset(void)
 {
-    /* Stop Timer1 */
+    /*
+     * Stop Timer1.
+     */
     HM_TCCR1B = 0x00;
 
-    /* Reset hardware counter */
+    /*
+     * Reset hardware counter.
+     */
     HM_TCNT1 = 0;
 
-    /* Reset software overflow counter */
+    /*
+     * Reset software overflow counter.
+     */
     timer1_overflow = 0;
 
-    /* Clear pending overflow flag */
+    /*
+     * Clear pending overflow flag.
+     */
     HM_TIFR1 = (1 << 0);
 }
 
@@ -147,11 +150,14 @@ void timer_measure_reset(void)
  * Therefore:
  *
  * CPU / 8
+ *
+ * 16 MHz / 8 = 2 MHz
+ * 1 count = 0.5 us
  */
 void timer_measure_start(void)
 {
     /*
-     * Reset pending overflow flag before starting.
+     * Clear any pending overflow flag.
      */
     HM_TIFR1 = (1 << 0);
 
@@ -164,13 +170,6 @@ void timer_measure_start(void)
      * Start Timer1 with /8 prescaler.
      */
     HM_TCCR1B = (1 << 1);
-
-    /*
-     * Enable global interrupts.
-     *
-     * This is required for the Timer1 ISR to execute.
-     */
-    sei();
 }
 
 
@@ -196,18 +195,31 @@ void timer_measure_stop(void)
  *
  * total count =
  *
- *     overflow × 65536
+ *     overflow x 65536
  *     + current TCNT1
  *
  * Timer1 tick = 0.5 us
  */
 uint32_t timer_measure_get(void)
 {
-    uint32_t total_count;
+    uint32_t overflow_count;
+    uint16_t counter;
+    uint8_t sreg_backup;
 
-    total_count =
-        ((uint32_t)timer1_overflow * 65536)
-        + HM_TCNT1;
+    /*
+     * Prevent Timer1 overflow ISR from changing
+     * timer1_overflow while we take the snapshot.
+     */
+    sreg_backup = SREG;
+    cli();
 
-    return total_count;
+    overflow_count = timer1_overflow;
+    counter = HM_TCNT1;
+
+    /*
+     * Restore the previous global interrupt state.
+     */
+    SREG = sreg_backup;
+
+    return (overflow_count * 65536UL) + counter;
 }

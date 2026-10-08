@@ -1,14 +1,14 @@
-#ifndef IR_H
-#define IR_H
+#ifndef IR_REGS_H
+#define IR_REGS_H
 
-#include <stdint.h>
+/* IR sensor wiring */
+#define IR_PORT        'D'
+#define IR_PIN         2
 
-typedef enum {
-    AVAILABLE,
-    OCCUPIED
-} slot_status_t;
-
-void ir_init(void);
-slot_status_t ir_get_status(void);
+/* 
+ * 1 -> Active LOW
+ * 0 -> Active HIGH
+ */
+#define IR_ACTIVE_LOW  1
 
 #endif

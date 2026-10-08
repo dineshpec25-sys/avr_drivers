@@ -1,7 +1,7 @@
 #include <stdint.h>
 
-#ifndef GPIO_H
-#define GPIO_H
+#ifndef GPIO_DRIVER_H
+#define GPIO_DRIVER_H
 
 typedef enum
 {

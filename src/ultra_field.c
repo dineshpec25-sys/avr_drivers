@@ -1,8 +1,8 @@
 #include <stdint.h>
 
-#include "gpio.h"
-#include "timer.h"
-#include "ultra.h"
+#include "../include/gpio.h"
+#include "../include/timer.h"
+#include "../include/ultra.h"
 
 
 /* =========================================================
@@ -40,24 +40,10 @@ void ultra_trigger(void)
     gpio_write(ULTRA_PORT, ULTRA_TRIG_PIN, LOW);
 
     /*
-     * Reset Timer1.
-     *
-     * Timer1 runs at:
-     *
-     * 16 MHz / 8 = 2 MHz
-     *
-     * Therefore:
-     *
-     * 1 count = 0.5 us
+     * Reset Timer1
      */
 
     timer_measure_reset();
-
-    /*
-     * Start Timer1
-     */
-
-    timer_measure_start();
 
     /*
      * TRIG HIGH
@@ -66,8 +52,16 @@ void ultra_trigger(void)
     gpio_write(ULTRA_PORT, ULTRA_TRIG_PIN, HIGH);
 
     /*
-     * 10 us / 0.5 us = 20 counts
+     * Start Timer1 measurement
+     *
+     * Timer1:
+     * 16 MHz / 8 = 2 MHz
+     * 1 count = 0.5 us
+     *
+     * 20 counts = 10 us
      */
+
+    timer_measure_start();
 
     while (timer_measure_get() < 20)
     {
@@ -106,12 +100,7 @@ uint32_t ultra_get_echo_time_us(void)
      * Wait for ECHO to become HIGH
      * ----------------------------------------------------- */
 
-    /*
-     * Reset Timer1 before starting the timeout measurement.
-     */
-
     timer_measure_reset();
-
     timer_measure_start();
 
     while (gpio_read(ULTRA_PORT, ULTRA_ECHO_PIN) == LOW)
@@ -119,20 +108,14 @@ uint32_t ultra_get_echo_time_us(void)
         timer_count = timer_measure_get();
 
         /*
-         * 30 ms timeout.
+         * 30 ms timeout
          *
-         * Timer1:
-         *
-         * 1 count = 0.5 us
-         *
-         * 30,000 us / 0.5 us
-         * = 60,000 counts
+         * 30,000 us / 0.5 us = 60,000 counts
          */
 
         if (timer_count >= 60000)
         {
             timer_measure_stop();
-
             return 0;
         }
     }
@@ -140,58 +123,45 @@ uint32_t ultra_get_echo_time_us(void)
 
     /* -----------------------------------------------------
      * ECHO is HIGH
-     * Start measuring the actual ECHO pulse width.
+     * Measure the ECHO pulse width
      * ----------------------------------------------------- */
 
     timer_measure_reset();
-
     timer_measure_start();
-
-
-    /* -----------------------------------------------------
-     * Wait for ECHO to become LOW
-     * ----------------------------------------------------- */
 
     while (gpio_read(ULTRA_PORT, ULTRA_ECHO_PIN) == HIGH)
     {
         timer_count = timer_measure_get();
 
         /*
-         * Safety timeout.
-         *
-         * Prevents the program from getting stuck if
-         * ECHO remains HIGH.
+         * Safety timeout
          */
 
         if (timer_count >= 60000)
         {
             timer_measure_stop();
-
             return 0;
         }
     }
 
 
     /*
-     * Get the number of Timer1 counts.
+     * Read final Timer1 count
      */
 
     timer_count = timer_measure_get();
 
     /*
-     * Stop Timer1.
+     * Stop Timer1
      */
 
     timer_measure_stop();
 
-
     /*
      * Timer1:
-     *
      * 1 count = 0.5 us
      *
      * Therefore:
-     *
      * time_us = timer_count / 2
      */
 
@@ -208,14 +178,13 @@ uint16_t ultra_get_distance_cm(void)
     uint32_t echo_time_us;
 
     /*
-     * Get ECHO pulse width in microseconds.
+     * Get ECHO pulse width
      */
 
     echo_time_us = ultra_get_echo_time_us();
 
-
     /*
-     * No valid ECHO received.
+     * No valid ECHO received
      */
 
     if (echo_time_us == 0)
@@ -223,16 +192,9 @@ uint16_t ultra_get_distance_cm(void)
         return 0;
     }
 
-
     /*
-     * Ultrasonic distance formula:
-     *
      * Distance(cm) = Echo_Time(us) / 58
-     *
-     * The measured ECHO time represents:
-     *
-     * Sensor -> Object -> Sensor
      */
 
-    return echo_time_us / 58;
+    return (uint16_t)(echo_time_us / 58);
 }

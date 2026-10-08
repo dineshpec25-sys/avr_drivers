@@ -29,7 +29,7 @@ void seg7_clear(void)
     gpio_write(seg7.g.port, seg7.g.pin, LOW);
 }
 
-void zero()
+static void zero()
 {
 	gpio_write(seg7.a.port, seg7.a.pin, HIGH);
         gpio_write(seg7.b.port, seg7.b.pin, HIGH);
@@ -39,22 +39,22 @@ void zero()
         gpio_write(seg7.f.port, seg7.f.pin, HIGH);
 }
 
-void one()
+static void one()
 {
 	gpio_write(seg7.b.port, seg7.b.pin, HIGH);
         gpio_write(seg7.c.port, seg7.c.pin, HIGH);
 }
 
-void two()
+static void two()
 {
 	gpio_write(seg7.a.port, seg7.a.pin, HIGH);
 	gpio_write(seg7.b.port, seg7.b.pin, HIGH);
-        gpio_write(seg7.c.port, seg7.c.pin, HIGH);
         gpio_write(seg7.d.port, seg7.d.pin, HIGH);
+        gpio_write(seg7.e.port, seg7.e.pin, HIGH);
         gpio_write(seg7.g.port, seg7.g.pin, HIGH);
 }
 
-void three()
+static void three()
 {
 	gpio_write(seg7.a.port, seg7.a.pin, HIGH);
         gpio_write(seg7.b.port, seg7.b.pin, HIGH);
@@ -63,7 +63,7 @@ void three()
         gpio_write(seg7.g.port, seg7.g.pin, HIGH);
 }
 
-void four()
+static void four()
 {
 	gpio_write(seg7.b.port, seg7.b.pin, HIGH);
         gpio_write(seg7.c.port, seg7.c.pin, HIGH);
@@ -71,7 +71,7 @@ void four()
         gpio_write(seg7.g.port, seg7.g.pin, HIGH);
 }
 
-void five()
+static void five()
 {
 	gpio_write(seg7.a.port, seg7.a.pin, HIGH);
         gpio_write(seg7.c.port, seg7.c.pin, HIGH);
@@ -80,7 +80,7 @@ void five()
         gpio_write(seg7.g.port, seg7.g.pin, HIGH);
 }
 
-void six()
+static void six()
 {
 	gpio_write(seg7.a.port, seg7.a.pin, HIGH);
         gpio_write(seg7.c.port, seg7.c.pin, HIGH);
@@ -90,14 +90,14 @@ void six()
         gpio_write(seg7.g.port, seg7.g.pin, HIGH);
 }
 
-void seven()
+static void seven()
 {
 	gpio_write(seg7.a.port, seg7.a.pin, HIGH);
         gpio_write(seg7.b.port, seg7.b.pin, HIGH);
 	gpio_write(seg7.c.port, seg7.c.pin, HIGH);
 }
 
-void eight()
+static void eight()
 {
 	gpio_write(seg7.a.port, seg7.a.pin, HIGH);
         gpio_write(seg7.b.port, seg7.b.pin, HIGH);
@@ -108,7 +108,7 @@ void eight()
         gpio_write(seg7.g.port, seg7.g.pin, HIGH);
 }
 
-void nine()
+static void nine()
 {
 	gpio_write(seg7.a.port, seg7.a.pin, HIGH);
         gpio_write(seg7.b.port, seg7.b.pin, HIGH);
@@ -118,7 +118,7 @@ void nine()
         gpio_write(seg7.g.port, seg7.g.pin, HIGH);
 }
 
-void seg7_display(uint8_t num)
+static void seg7_display(uint8_t num)
 {
     seg7_clear();
 

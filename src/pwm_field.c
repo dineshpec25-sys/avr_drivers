@@ -13,19 +13,19 @@ void pwm_init(void)
        Non-inverting OC2A
     */
     HM_TCCR2A = (1 << 7) | (1 << 1) | (1 << 0);
-    HM_TCCR3B = 0x00; // setting the timer to initally zero
+    HM_TCCR2B = 0x00; // setting the timer to initally zero
     HM_OCR2A = 128; // 128/256 * 100 = 50%
     HM_TCNT2 = 0; // reset the counter
 }
 
 void pwm_start(void)
 {
-    HM_TCCR2B = (1 << 2) | (1 << 0); // perscaler 64
+    HM_TCCR2B = (1 << 2); // perscaler 64
 }
 
 void pwm_stop(void)
 {
-    HM_TCCR3B &= ~((1 << 2) | (1 << 1) | (1 << 0)); // to stop the timer
+    HM_TCCR2B &= ~((1 << 2) | (1 << 1) | (1 << 0)); // to stop the timer
 }
 
 void pwm_set_duty(uint8_t duty)
