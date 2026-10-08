@@ -1,5 +1,8 @@
 #include <stdint.h>
 
+#ifndef GPIO_REGS_H
+#define GPIO_REGS_H
+
 typedef struct
 {
     volatile uint8_t pin;
@@ -48,3 +51,5 @@ static gpio_regs_t *const gpio_ports[] =
  * and to avoid linker error and multiple definition if the array
  * and used const to avoid any change in the value of the pointer 
  *array.*/
+
+#endif
