@@ -43,6 +43,11 @@ void timer_init(void)
 // Timer0 for 1ms delay
 void ms_delay(uint16_t ms)
 {
+    /* Timer0 runs freely, so the compare flag may already be set.
+     * Restart the count so the first millisecond is a full one. */
+    HM_TCNT0 = 0;
+    HM_TIFR0 = (1 << 1);
+
     while (ms--)
     {
         while (!(HM_TIFR0 & (1 << 1)))
