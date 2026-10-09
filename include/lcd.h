@@ -5,15 +5,13 @@
 #include <stdint.h>
 
 /* LCD connected to Port A */
-#define LCD_PORT 'A'
-
-#define LCD_RS 0
-#define LCD_EN 1
-
-#define LCD_D4 4
-#define LCD_D5 5
-#define LCD_D6 6
-#define LCD_D7 7
+#define LCD_PORT 'L' 
+#define LCD_RS 0 
+#define LCD_EN 1 
+#define LCD_D4 2 
+#define LCD_D5 3 
+#define LCD_D6 4 
+#define LCD_D7 5
 
 void lcd_init(void);
 void lcd_command(uint8_t command);
