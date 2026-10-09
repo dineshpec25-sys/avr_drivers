@@ -1,17 +1,16 @@
-
 #ifndef LCD_H
 #define LCD_H
 
 #include <stdint.h>
 
-/* LCD connected to Port L */
-#define LCD_PORT 'L' 
-#define LCD_RS 0 
-#define LCD_EN 1 
-#define LCD_D4 2 
-#define LCD_D5 3 
-#define LCD_D6 4 
-#define LCD_D7 5
+/* LCD connected to Port K */
+#define LCD_PORT 'K'
+#define LCD_RS 0 /* PK0 / A8  */
+#define LCD_EN 1 /* PK1 / A9  */
+#define LCD_D4 4 /* PK4 / A12 */
+#define LCD_D5 5 /* PK5 / A13 */
+#define LCD_D6 6 /* PK6 / A14 */
+#define LCD_D7 7 /* PK7 / A15 */
 
 void lcd_init(void);
 void lcd_command(uint8_t command);

@@ -221,7 +221,8 @@ static void update_leds(distance_state_t state)
 
 /* Track the duration of each occupied slot with noise filter. */
 static void update_slot_duration(uint8_t occupied1,
-                                 uint8_t occupied2)
+                                 uint8_t occupied2,
+                                 uint16_t delta_ms)
 {
     uint8_t occupied[2] = {occupied1, occupied2};
     static uint16_t vacant_ms[2] = {0, 0};
@@ -242,7 +243,7 @@ static void update_slot_duration(uint8_t occupied1,
             }
             else
             {
-                slot_ms[i] += LOOP_DELAY_MS;
+                slot_ms[i] += delta_ms;
 
                 if (slot_ms[i] >= 1000)
                 {
@@ -256,7 +257,7 @@ static void update_slot_duration(uint8_t occupied1,
             /* If previously occupied, filter out brief glitches before resetting */
             if (previous_occupied[i])
             {
-                vacant_ms[i] += LOOP_DELAY_MS;
+                vacant_ms[i] += delta_ms;
                 if (vacant_ms[i] >= 1000) /* Vacant for 1 full second */
                 {
                     slot_seconds[i] = 0;
@@ -552,6 +553,7 @@ int main(void)
     uint16_t distance = 0;
     distance_state_t state = SAFE;
     uint32_t ultra_refresh_ms = 0;
+    uint32_t duration_ms = 0;
 
     /* Initialize the existing timer driver. */
     timer_init();
@@ -628,7 +630,10 @@ int main(void)
         }
 
         /* Keep duration tracking and mode button active */
-        update_slot_duration(occupied1, occupied2);
+        /* Use elapsed_ms so the blocking ultrasonic time is counted too. */
+        update_slot_duration(occupied1, occupied2,
+                             (uint16_t)(elapsed_ms - duration_ms));
+        duration_ms = elapsed_ms;
         update_button();
 
         /* Refresh the LCD periodically. */

@@ -53,9 +53,11 @@ void lcd_command(uint8_t command)
     gpio_write(LCD_PORT, LCD_RS, LOW);
     lcd_write_byte(command);
 
+    /* Clear and Home need at least 1.52 ms. ms_delay(n) can return
+     * up to 1 ms early, so wait 5 ms to stay safely above that. */
     if (command == 0x01 || command == 0x02)
     {
-        ms_delay(2);
+        ms_delay(5);
     }
 }
 
