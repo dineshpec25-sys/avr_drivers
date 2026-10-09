@@ -1,27 +1,24 @@
 MCU = atmega2560
-PORMCU = atmega2560
 PORT = /dev/ttyACM0
 BAUD = 115200
 
-TARGET = pwm_test
+TARGET = keypad_test
 
-CFLAGS = -mmcu=$(MCU) -Os -Wall -DF_CPU=16000000UL \
-         -I../../include -I../../hm
+CFLAGS = -mmcu=$(MCU) -Os -Wall -I../../include -I../../hm
 
 LIB = ../../lib/libavr_drivers.a
 
 DRIVER_SRC = $(wildcard ../../src/*.c)
 DRIVER_OBJ = $(patsubst ../../src/%.c,../../build/%.o,$(DRIVER_SRC))
-DRIVER_HEADERS = $(wildcard ../../include/*.h ../../hm/*.h)
 
 all: $(TARGET).hex
 
-# Compile driver source files
-../../build/%.o: ../../src/%.c $(DRIVER_HEADERS)
+# Compile individual driver sources
+../../build/%.o: ../../src/%.c
 	mkdir -p ../../build
 	avr-gcc $(CFLAGS) -c $< -o $@
 
-# Force the library to be rebuilt
+# Rebuild the static library
 .PHONY: FORCE
 FORCE:
 
@@ -30,20 +27,20 @@ $(LIB): FORCE $(DRIVER_OBJ)
 	rm -f $@
 	avr-ar rcs $@ $(DRIVER_OBJ)
 
-# Link application against the library
+# Build the application
 $(TARGET).elf: $(TARGET).c $(LIB)
 	avr-gcc $(CFLAGS) -o $@ $< $(LIB)
 
-# Generate HEX file
+# Generate the HEX file
 $(TARGET).hex: $(TARGET).elf
 	avr-objcopy -O ihex -R .eeprom $< $@
 	avr-size $<
 
-# Flash ATmega2560
+# Flash the ATmega2560
 flash: $(TARGET).hex
-	avrdude -p $(MCU) -c wiring -P $(PORT) -b $(BAUD) \
-	        -D -U flash:w:$<:i
+	avrdude -p $(MCU) -c wiring -P $(PORT) -b $(BAUD) -D -U flash:w:$<:i
 
+# Clean application outputs
 clean:
 	rm -f $(TARGET).elf $(TARGET).hex
 

@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include "../include/gpio.h"
 
 int main(void)

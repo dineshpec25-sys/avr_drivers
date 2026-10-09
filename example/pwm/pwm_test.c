@@ -1,25 +1,43 @@
+#include <stdint.h>
 #include "../../include/pwm.h"
 #include "../../include/timer.h"
 
 int main(void)
 {
-    pwm_init();
     timer_init();
-
-    pwm_start();
+    pwm_init();
 
     while (1)
     {
-        pwm_set_duty(25);
-        ms_delay(3000);
+        /* Tone 1: 500 Hz */
+	for(uint8_t i = 0; i <= 9; i++)
+	{pwm_tone(500);
+        ms_delay(500);
+        pwm_mute();
+        ms_delay(300);}
 
-        pwm_set_duty(50);
-        ms_delay(3000);
+        /* Tone 2: 800 Hz */
+		for(uint8_t i = 0; i <= 9; i++){
+        pwm_tone(800);
+        ms_delay(500);
+        pwm_mute();
+        ms_delay(300);}
 
-        pwm_set_duty(75);
-        ms_delay(3000);
+        /* Tone 3: 1200 Hz */
+	for(uint8_t i = 0; i <= 9; i++)
+	{
+        pwm_tone(1200);
+        ms_delay(500);
+        pwm_mute();
+        ms_delay(300);
+	}
 
-        pwm_set_duty(100);
+        /* Tone 4: 2000 Hz */
+		for(uint8_t i = 0; i <= 9; i++)
+		{        pwm_tone(2000);
+        ms_delay(500);
+        pwm_mute();
         ms_delay(3000);
+		}
     }
 }

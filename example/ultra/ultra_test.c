@@ -17,7 +17,7 @@ int main(void)
     {
         distance = ultra_get_distance_cm();
 
-        if (distance > 0 && distance <= 15)
+        if (distance > 0 && distance <= 50)
         {
             gpio_write('E', 5, HIGH);
         }
