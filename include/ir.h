@@ -1,3 +1,6 @@
+#ifndef IR_H
+#define IR_H
+
 #include <stdint.h>
 
 typedef enum {
@@ -8,3 +11,5 @@ typedef enum {
 void ir_init(void);
 slot_status_t ir_get_status(void);
 slot_status_t ir_get_status_pin(uint8_t pin);
+
+#endif

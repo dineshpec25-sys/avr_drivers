@@ -43,7 +43,7 @@ void timer_init(void)
 // Timer0 for 1ms delay
 void ms_delay(uint16_t ms)
 {
-    :while (ms--)
+    while (ms--)
     {
         while (!(HM_TIFR0 & (1 << 1)))
         {

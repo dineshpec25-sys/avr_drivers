@@ -1,4 +1,4 @@
-#include "../include/gpio.h"
+#include "../../include/gpio.h"
 
 int main(void)
 {

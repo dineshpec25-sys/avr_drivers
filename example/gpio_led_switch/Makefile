@@ -4,8 +4,8 @@ BAUD = 115200
 
 TARGET = gpio_led_switch
 
-CFLAGS = -mmcu=$(MCU) -Os -Wall -I../include -I../hm
-LDFLAGS = -L../lib -lavr_drivers
+CFLAGS = -mmcu=$(MCU) -Os -Wall -I../../include -I../../hm
+LDFLAGS = -L../../lib -lavr_drivers
 
 all: $(TARGET).hex
 

@@ -4,7 +4,7 @@ BAUD = 115200
 
 TARGET = analog_ir_pwm
 
-CFLAGS = -mmcu=$(MCU) -Os -Wall -I../../include -I../../hm
+CFLAGS = -mmcu=$(MCU) -Os -Wall -I../../../include -I../../../hm
 LIB = ../../../lib/libavr_drivers.a
 
 all: $(TARGET).hex

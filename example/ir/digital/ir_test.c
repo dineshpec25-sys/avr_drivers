@@ -1,5 +1,5 @@
-#include "../../include/gpio.h"
-#include "../../include/ir.h"
+#include "../../../include/gpio.h"
+#include "../../../include/ir.h"
 
 int main(void)
 {

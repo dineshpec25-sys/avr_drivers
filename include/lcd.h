@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-/* LCD connected to Port A */
+/* LCD connected to Port L */
 #define LCD_PORT 'L' 
 #define LCD_RS 0 
 #define LCD_EN 1 

@@ -99,26 +99,103 @@ static uint8_t slot_occupied(uint8_t pin)
 }
 
 
-/* Convert the measured distance into a warning state. */
-static distance_state_t get_distance_state(uint16_t distance)
+/* 3-sample median filter to reject ultrasonic noise and random dropouts */
+static uint16_t get_filtered_distance(void)
 {
-    if (distance == 0)
-        return SENSOR_ERROR;
+    static uint16_t history[3] = {0, 0, 0};
+    static uint8_t idx = 0;
+    static uint8_t count = 0;
 
-    if (distance > 30)
+    uint16_t raw = ultra_get_distance_cm();
+
+    history[idx] = raw;
+    idx = (idx + 1) % 3;
+    if (count < 3)
+        count++;
+
+    if (count < 3)
+        return raw;
+
+    uint16_t a = history[0];
+    uint16_t b = history[1];
+    uint16_t c = history[2];
+
+    /* Median of 3 values */
+    if ((a <= b && b <= c) || (c <= b && b <= a))
+        return b;
+    if ((b <= a && a <= c) || (c <= a && a <= b))
+        return a;
+    return c;
+}
+
+/* Convert the measured distance into a warning state with hysteresis to prevent flickering. */
+static distance_state_t get_distance_state(uint16_t distance, distance_state_t current)
+{
+    /* 0 indicates no echo received within timeout (clear path / out of range) */
+    if (distance == 0)
         return SAFE;
 
-    if (distance > 15)
-        return CAUTION;
+    switch (current)
+    {
+        case STOP:
+            /* To exit STOP, obstacle must move beyond 7 cm */
+            if (distance > 7)
+            {
+                if (distance > 30)
+                    return SAFE;
+                if (distance > 15)
+                    return CAUTION;
+                return WARNING;
+            }
+            return STOP;
 
-    if (distance > 5)
-        return WARNING;
+        case WARNING:
+            if (distance <= 5)
+                return STOP;
+            if (distance > 17) /* Hysteresis: exit WARNING above 17 cm */
+            {
+                if (distance > 30)
+                    return SAFE;
+                return CAUTION;
+            }
+            return WARNING;
 
-    return STOP;
+        case CAUTION:
+            if (distance <= 15)
+            {
+                if (distance <= 5)
+                    return STOP;
+                return WARNING;
+            }
+            if (distance > 33) /* Hysteresis: exit CAUTION above 33 cm */
+                return SAFE;
+            return CAUTION;
+
+        case SAFE:
+        default:
+            if (distance <= 5)
+                return STOP;
+            if (distance <= 15)
+                return WARNING;
+            if (distance <= 30)
+                return CAUTION;
+            return SAFE;
+    }
 }
 /* Update the three status LEDs. */
 static void update_leds(distance_state_t state)
 {
+    static distance_state_t last_state;
+    static uint8_t initialized = 0;
+
+    /* Avoid rewriting the LED outputs when nothing changed. */
+    if (initialized && state == last_state)
+        return;
+
+    initialized = 1;
+    last_state = state;
+
+    /* Turn all LEDs off before selecting the new indicator. */
     gpio_write(LED_PORT, LED_GREEN, LOW);
     gpio_write(LED_PORT, LED_YELLOW, LOW);
     gpio_write(LED_PORT, LED_RED, LOW);
@@ -142,40 +219,58 @@ static void update_leds(distance_state_t state)
     }
 }
 
-
-/* Track the duration of each occupied slot. */
+/* Track the duration of each occupied slot with noise filter. */
 static void update_slot_duration(uint8_t occupied1,
                                  uint8_t occupied2)
 {
     uint8_t occupied[2] = {occupied1, occupied2};
+    static uint16_t vacant_ms[2] = {0, 0};
     uint8_t i;
 
     for (i = 0; i < 2; i++)
     {
-        if (occupied[i] && !previous_occupied[i])
+        if (occupied[i])
         {
-            /* Start timing when a slot becomes occupied. */
-            slot_seconds[i] = 0;
-            slot_ms[i] = 0;
-        }
-        else if (!occupied[i])
-        {
-            /* Reset the displayed duration when the slot becomes free. */
-            slot_seconds[i] = 0;
-            slot_ms[i] = 0;
+            vacant_ms[i] = 0;
+
+            if (!previous_occupied[i])
+            {
+                /* Start timing when a slot becomes occupied. */
+                slot_seconds[i] = 0;
+                slot_ms[i] = 0;
+                previous_occupied[i] = 1;
+            }
+            else
+            {
+                slot_ms[i] += LOOP_DELAY_MS;
+
+                if (slot_ms[i] >= 1000)
+                {
+                    slot_ms[i] -= 1000;
+                    slot_seconds[i]++;
+                }
+            }
         }
         else
         {
-            slot_ms[i] += LOOP_DELAY_MS;
-
-            if (slot_ms[i] >= 1000)
+            /* If previously occupied, filter out brief glitches before resetting */
+            if (previous_occupied[i])
             {
-                slot_ms[i] -= 1000;
-                slot_seconds[i]++;
+                vacant_ms[i] += LOOP_DELAY_MS;
+                if (vacant_ms[i] >= 1000) /* Vacant for 1 full second */
+                {
+                    slot_seconds[i] = 0;
+                    slot_ms[i] = 0;
+                    vacant_ms[i] = 0;
+                    previous_occupied[i] = 0;
+                }
+            }
+            else
+            {
+                slot_seconds[i] = 0;
+                slot_ms[i] = 0;
             }
         }
-
-        previous_occupied[i] = occupied[i];
     }
 }
 
@@ -213,13 +308,26 @@ static void update_button(void)
  * STOP:       1800 Hz, continuous tone
  * SENSOR_ERROR: fast warning beeps
  */
-static void update_buzzer(distance_state_t state)
+static void update_buzzer(distance_state_t state, uint16_t distance)
 {
     uint16_t frequency;
     uint16_t interval;
     uint16_t on_time;
     uint8_t continuous = 0;
     uint32_t phase;
+
+    /* When clear (no obstacle) and safe, keep buzzer silent */
+    if (state == SAFE && distance == 0)
+    {
+        if (buzzer_on)
+        {
+            pwm_mute();
+            buzzer_on = 0;
+            active_frequency = 0;
+        }
+        previous_state = state;
+        return;
+    }
 
     switch (state)
     {
@@ -329,10 +437,18 @@ static void show_slot_mode(uint8_t occupied1,
 
 /* LCD mode 2: display reversing distance and warning state. */
 static void show_distance_mode(uint16_t distance,
-                               distance_state_t state)
+                               distance_state_t state,
+                               uint8_t occupied1)
 {
     char line1[17];
     const char *line2;
+
+    if (occupied1)
+    {
+        lcd_write_line(0, "SLOT 1: PARKED");
+        lcd_write_line(1, "STOPPED");
+        return;
+    }
 
     switch (state)
     {
@@ -358,7 +474,9 @@ static void show_distance_mode(uint16_t distance,
     }
 
     if (state == SENSOR_ERROR)
-        snprintf(line1, sizeof(line1), "DIST: NO ECHO");
+        snprintf(line1, sizeof(line1), "DIST: SENSOR ERR");
+    else if (distance == 0)
+        snprintf(line1, sizeof(line1), "DIST: CLEAR");
     else
         snprintf(line1, sizeof(line1),
                  "DIST: %u cm", distance);
@@ -431,8 +549,9 @@ int main(void)
     uint8_t occupied1;
     uint8_t occupied2;
 
-    uint16_t distance;
-    distance_state_t state;
+    uint16_t distance = 0;
+    distance_state_t state = SAFE;
+    uint32_t ultra_refresh_ms = 0;
 
     /* Initialize the existing timer driver. */
     timer_init();
@@ -464,22 +583,52 @@ int main(void)
 
     ms_delay(500);
 
+    /* Initial distance measurement */
+    distance = get_filtered_distance();
+    state = get_distance_state(distance, state);
+
     while (1)
     {
         /* Read parking-slot occupancy. */
         occupied1 = slot_occupied(IR1_PIN);
         occupied2 = slot_occupied(IR2_PIN);
 
-        /* Measure reversing distance. */
-        distance = ultra_get_distance_cm();
-        //distance = 150;
-	state = get_distance_state(distance);
-	//state = (distance == 0) ? SAFE : STOP;   // TEMPORARY test
+        /* When Slot 1 detects the car, reversing assist completes and everything stops */
+        if (occupied1)
+        {
+            state = STOP;
+            distance = 0;
+            update_leds(STOP);
+            if (buzzer_on)
+            {
+                pwm_mute();
+                buzzer_on = 0;
+                active_frequency = 0;
+            }
+        }
+        else
+        {
+            /* Measure reversing distance periodically (HC-SR04 requires >= 60ms between pings). */
+            if ((uint32_t)(elapsed_ms - ultra_refresh_ms) >= 80)
+            {
+                ultra_refresh_ms = elapsed_ms;
+                distance = get_filtered_distance();
+                state = get_distance_state(distance, state);
 
-        /* Keep all system functions running in every LCD mode. */
+                /* Compensate elapsed_ms for blocking ultrasonic measurement */
+                if (distance == 0)
+                    elapsed_ms += 30;
+                else
+                    elapsed_ms += (uint32_t)distance * 58 / 1000;
+            }
+
+            /* Normal reversing assist */
+            update_leds(state);
+            update_buzzer(state, distance);
+        }
+
+        /* Keep duration tracking and mode button active */
         update_slot_duration(occupied1, occupied2);
-        update_leds(state);
-        update_buzzer(state);
         update_button();
 
         /* Refresh the LCD periodically. */
@@ -493,7 +642,7 @@ int main(void)
             }
             else if (lcd_mode == MODE_DISTANCE)
             {
-                show_distance_mode(distance, state);
+                show_distance_mode(distance, state, occupied1);
             }
             else
             {

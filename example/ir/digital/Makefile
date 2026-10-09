@@ -4,8 +4,8 @@ BAUD = 115200
 
 TARGET = ir_test
 
-CFLAGS = -mmcu=$(MCU) -Os -Wall -I../../include -I../../hm
-LIB = ../../lib/libavr_drivers.a
+CFLAGS = -mmcu=$(MCU) -Os -Wall -I../../../include -I../../../hm
+LIB = ../../../lib/libavr_drivers.a
 
 all: $(TARGET).hex
 
