@@ -1,6 +1,8 @@
-
+#include <stdint.h>
 #include "../include/timer.h"
 #include "../hm/timer_regs.h"
+
+static uint32_t timer1_overflow = 0;
 
 void timer_init(void)
 {
@@ -113,5 +115,5 @@ uint32_t timer_measure_get(void)
         counter = HM_TCNT1;
     }
 
-    return (timer1_overflow * 65536UL) + counter;
+    return (timer1_overflow * 65536UL) + counter; //UL indicates that the operation must be in the unsigned long
 }
