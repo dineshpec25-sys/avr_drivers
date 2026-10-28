@@ -181,7 +181,7 @@ static distance_state_t get_distance_state(uint16_t distance, distance_state_t c
                 return CAUTION;
             return SAFE;
     }
-}
+
 /* Update the three status LEDs. */
 static void update_leds(distance_state_t state)
 {
